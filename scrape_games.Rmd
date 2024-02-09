@@ -1,0 +1,42 @@
+---
+title: "Scrape game logs"
+output: pdf_document
+date: "2024-01-24"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(baseballr)
+```
+
+```{r}
+ncaa_roster(team_id = 746, year = 2023) %>% 
+  filter(position == "P")
+ncaa_game_logs(2501521, year = 2023, type = 'pitching', span = 'game')
+
+team_ids <- load_ncaa_baseball_teams() %>%
+  filter(year == 2023 & division == 1) %>% 
+  pull(team_id) # 746 is UVA, 742 is Tech
+all_rosters <- data.frame()
+for (id in team_ids){
+  all_rosters <- bind_rows(all_rosters, ncaa_roster(team_id = id, year = 2023))
+}
+
+pitcher_ids <- all_rosters %>% 
+  filter(position %in% c("P", "p")) %>% 
+  drop_na(player_id) %>% 
+  pull(player_id) %>% 
+  as.numeric()
+all_games <- data.frame()
+for (id in pitcher_ids){
+  all_games <- bind_rows(all_games, ncaa_game_logs(id, year = 2023, type = 'pitching'))
+}
+all_games <- all_games %>% drop_na(G)
+```
+
+```{r}
+ncaa_park_factor(team_id = 746, years = c(2019:2023), type = 'conference')
+ncaa_park_factor(team_id = 742, years = c(2019:2023), type = 'conference')
+```
+
