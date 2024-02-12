@@ -16,8 +16,8 @@ ncaa_roster(team_id = 746, year = 2023) %>%
 ncaa_game_logs(2501521, year = 2023, type = 'pitching', span = 'game')
 
 team_ids <- load_ncaa_baseball_teams() %>%
-  filter(year == 2023 & division == 1) %>% 
-  pull(team_id) # 746 is UVA, 742 is Tech
+  filter(year == 2023, division == 1, conference == "ACC") %>% 
+  pull(team_id) # 746 is UVA, 742 is Tech 
 all_rosters <- data.frame()
 for (id in team_ids){
   all_rosters <- bind_rows(all_rosters, ncaa_roster(team_id = id, year = 2023))
@@ -29,10 +29,18 @@ pitcher_ids <- all_rosters %>%
   pull(player_id) %>% 
   as.numeric()
 all_games <- data.frame()
-for (id in pitcher_ids){
-  all_games <- bind_rows(all_games, ncaa_game_logs(id, year = 2023, type = 'pitching'))
+num_chunks <- 10
+id_chunks <- rep(1:ceiling(length(pitcher_ids)/num_chunks), each = 10)[1:length(pitcher_ids)]
+
+for (chunk in 1:num_chunks){
+  id_chunk <- pitcher_ids[id_chunks == chunk]
+  for (id in id_chunk){
+    all_games <- bind_rows(all_games, ncaa_game_logs(id, year = 2023, type = 'pitching'))
+  }
 }
-all_games <- all_games %>% drop_na(G)
+
+all_games <- all_games %>% drop_na(G) %>% replace(is.na(.), 0)
+all_games
 ```
 
 ```{r}
